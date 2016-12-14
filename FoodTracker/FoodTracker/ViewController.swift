@@ -9,13 +9,13 @@
 import UIKit
 
 class ViewController: UIViewController, UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate{
-
+    
     //MARK: Properties
     @IBOutlet weak var defaultLabel: UILabel!
     @IBOutlet weak var mealNameText: UITextField!
     
     @IBOutlet weak var imageView: UIImageView!
-   
+    
     @IBOutlet weak var ratingControl: RatingControl!
     
     override func viewDidLoad() {
@@ -23,17 +23,17 @@ class ViewController: UIViewController, UITextFieldDelegate, UIImagePickerContro
         // Do any additional setup after loading the view, typically from a nib.
         mealNameText.delegate = self
     }
-
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-
+    
     //MARK:Button actions
     @IBAction func setDefaultLabelText(_ sender: UIButton) {
         defaultLabel.text = "Hello Default 👍"
     }
-
+    
     func textFieldDidEndEditing(_ textField: UITextField) {
         defaultLabel.text = mealNameText.text
     }

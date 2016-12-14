@@ -30,7 +30,8 @@ class CalculatorBrain{
         "=": Operation.Equals,
         "√": Operation.UnaryOperation(sqrt),
         "cos": Operation.UnaryOperation(cos),
-        "sin": Operation.UnaryOperation(sin)
+        "sin": Operation.UnaryOperation(sin),
+        "±": Operation.UnaryOperation({-$0})
     ]
     
     func setOperand(operand: Double){
@@ -43,15 +44,20 @@ class CalculatorBrain{
             case .Constants(let value):
                 accumulator = value
             case .BinaryOperation(let function):
+                executePendingBinaryOperation()
                 pending = PendingBinaryOperationInfo(binaryFunction: function, firstOperand: accumulator)
             case .UnaryOperation(let function):
                 accumulator = function(accumulator)
             case .Equals:
-                if pending != nil{
-                    accumulator = pending!.binaryFunction(pending!.firstOperand, accumulator)
-                    pending = nil
-                }
+                executePendingBinaryOperation()
             }
+        }
+    }
+    
+    private func executePendingBinaryOperation(){
+        if pending != nil{
+            accumulator = pending!.binaryFunction(pending!.firstOperand, accumulator)
+            pending = nil
         }
     }
     

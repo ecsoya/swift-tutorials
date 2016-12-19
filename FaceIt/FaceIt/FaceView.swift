@@ -11,7 +11,12 @@ import UIKit
 @IBDesignable
 class FaceView: UIView {
     
-   @IBInspectable var lineWidth: CGFloat = 5.0
+    @IBInspectable var lineWidth: CGFloat = 5.0 {
+        didSet{
+            setNeedsDisplay()
+        }
+    }
+    
     
     @IBInspectable  var scale: CGFloat = 0.90 {
         didSet{
@@ -19,9 +24,34 @@ class FaceView: UIView {
         }
     }
     
-   @IBInspectable  var color: UIColor? = UIColor.blue
+    @IBInspectable  var color: UIColor? = UIColor.blue {
+        didSet{
+            setNeedsDisplay()
+        }
+    }
     
-   @IBInspectable var mouthCurvature: Double = 1.0 //1 full smile, -1 full frown
+    
+    @IBInspectable var mouthCurvature: Double = 1.0 {//1 full smile, -1 full frown
+        didSet{
+            setNeedsDisplay()
+        }
+    }
+    
+    
+    @IBInspectable var eyeOpen: Bool = true{
+        didSet{
+            setNeedsDisplay()
+        }
+    }
+    
+    
+    @IBInspectable var eyeBrowTilt: Double = 0.5  // -1 full furrow, 1 fully relaxed
+        {
+        didSet{
+            setNeedsDisplay()
+        }
+    }
+    
     
     func pinchZoom(sender: UIPinchGestureRecognizer){
         scale = scale * sender.scale
@@ -46,6 +76,7 @@ class FaceView: UIView {
         static let SkullRadiusToMouthWidth: CGFloat = 1
         static let SkullRadiusToMouthHeight: CGFloat = 3
         static let SkullRadiusToMouthOffset: CGFloat = 3
+        static let SkullRadiusToBrowOffset: CGFloat = 5
     }
     
     private func pathToCircle( arcCenter: CGPoint, withRadius radius: CGFloat) -> UIBezierPath {
@@ -54,18 +85,55 @@ class FaceView: UIView {
         return path
     }
     
-    private func pathToEye (eye: Eye) -> UIBezierPath {
+    private func pathToEye (_ eye: Eye) -> UIBezierPath {
         let eyeRadius = skullRadius / Ratios.SkullRadiusToEyeRadius
-        let eyeOffset = skullRadius / Ratios.SkullRadiusToEyeOffset
         
-        var eyeCenter = CGPoint(x: skullCenter.x, y: skullCenter.y - eyeOffset)
+        let eyeCenter = getEyeCenter(eye)
+        
+        if eyeOpen {
+            return pathToCircle(arcCenter: eyeCenter, withRadius: eyeRadius)
+        } else {
+            let path = UIBezierPath();
+            path.move(to: CGPoint(x: eyeCenter.x - eyeRadius, y: eyeCenter.y))
+            path.addLine(to: CGPoint(x: eyeCenter.x + eyeRadius, y: eyeCenter.y))
+            path.lineWidth = lineWidth
+            return path
+        }
+    }
+    
+    private func getEyeCenter (_ eye: Eye) -> CGPoint  {
+        let eyeOffset = skullRadius / Ratios.SkullRadiusToEyeOffset
+        var eyeCenter = skullCenter
+        eyeCenter.y -= eyeOffset
         switch eye {
         case .Left:
             eyeCenter.x -= eyeOffset
         case .Right:
             eyeCenter.x += eyeOffset
         }
-        return pathToCircle(arcCenter: eyeCenter, withRadius: eyeRadius)
+        return eyeCenter
+    }
+    
+    private func pathForBrow(_ eye: Eye) -> UIBezierPath {
+        var tilt = eyeBrowTilt
+        switch eye {
+        case .Left:
+            tilt *= -1.0
+        case .Right:
+            break
+        }
+        var browCenter = getEyeCenter(eye)
+        browCenter.y -= skullRadius / Ratios.SkullRadiusToBrowOffset
+        let eyeRadius = skullRadius / Ratios.SkullRadiusToEyeRadius
+        let tiltOffset = CGFloat(max(-1, min(tilt, 1))) * eyeRadius / 2
+        let browStart = CGPoint(x: browCenter.x - eyeRadius, y: browCenter.y - tiltOffset)
+        let browEnd = CGPoint(x: browCenter.x + eyeRadius, y: browCenter.y + tiltOffset)
+        
+        let path = UIBezierPath()
+        path.move(to: browStart)
+        path.addLine(to: browEnd)
+        path.lineWidth = lineWidth
+        return path
     }
     
     private func pathToMouth () -> UIBezierPath {
@@ -97,11 +165,16 @@ class FaceView: UIView {
         //Draw head
         pathToCircle(arcCenter: skullCenter, withRadius: skullRadius).stroke()
         //Draw eyes
-        pathToEye(eye: .Left).stroke()
-        pathToEye(eye: .Right).stroke()
+        pathToEye(.Left).stroke()
+        pathToEye(.Right).stroke()
         
         //Draw mouth
         pathToMouth().stroke()
+        
+        //Draw Brow Tilt
+        pathForBrow(.Left).stroke()
+        pathForBrow( .Right).stroke()
+        
     }
     
     

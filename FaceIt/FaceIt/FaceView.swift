@@ -8,17 +8,25 @@
 
 import UIKit
 
+@IBDesignable
 class FaceView: UIView {
     
-    var lineWidth: CGFloat = 5.0
+   @IBInspectable var lineWidth: CGFloat = 5.0
     
-    var scale: CGFloat = 0.90
+    @IBInspectable  var scale: CGFloat = 0.90 {
+        didSet{
+            setNeedsDisplay()
+        }
+    }
     
-    var color: UIColor? = UIColor.blue
+   @IBInspectable  var color: UIColor? = UIColor.blue
     
-    var mouthCurvature: Double = 1.0 //1 full smile, -1 full frown
+   @IBInspectable var mouthCurvature: Double = 1.0 //1 full smile, -1 full frown
     
-    
+    func pinchZoom(sender: UIPinchGestureRecognizer){
+        scale = scale * sender.scale
+        sender.scale = 1
+    }
     private var skullRadius: CGFloat {
         return min(bounds.width, bounds.height)/2 * scale
     }

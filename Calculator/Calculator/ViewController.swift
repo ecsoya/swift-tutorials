@@ -8,6 +8,8 @@
 
 import UIKit
 
+var calculatorCount = 0
+
 class ViewController: UIViewController {
     
     @IBOutlet private weak var display: UILabel!
@@ -16,7 +18,21 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
+        
+        //Try to look at the memory heap for calculators
+        calculatorCount += 1
+        print("Loaded up a new Calculator (count = \(calculatorCount))")
+        
+        //Add clouse and watch it
+        brain.addUnaryOperation(symbol: "Z") { [weak weakSelf = self] in //this is important to release heap [unowned ...]
+            weakSelf?.display.textColor = UIColor.red
+            return sqrt($0)
+        }
+    }
+    
+    deinit {
+        calculatorCount -= 1
+        print("Calculator left the heap (count = \(calculatorCount))")
     }
     
     override func didReceiveMemoryWarning() {

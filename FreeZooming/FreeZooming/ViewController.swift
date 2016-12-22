@@ -10,7 +10,7 @@ import UIKit
 import UIKit.UIGestureRecognizerSubclass
 
 class ViewController: UIViewController , UIGestureRecognizerDelegate{
-
+    
     @IBOutlet weak var drawingPaint: UIImageView!
     
     // Zomming
@@ -18,35 +18,34 @@ class ViewController: UIViewController , UIGestureRecognizerDelegate{
     var previousTransform = CGAffineTransform(scaleX: 1.0, y: 1.0)
     var maxScale:CGFloat = 6.0
     let minScale:CGFloat = 0.5
-
+    var lastPoint: CGPoint?
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let pinch = UIPinchGestureRecognizer(target: self, action: #selector(scaleImage))
-        self.view.addGestureRecognizer(pinch)
-        
         let tap = UITapGestureRecognizer(target: self, action: #selector(tapSmartZoomAction))
-       tap.numberOfTapsRequired = 1
-       tap.numberOfTouchesRequired = 2
+        tap.numberOfTapsRequired = 1
+        tap.numberOfTouchesRequired = 2
         self.view.addGestureRecognizer(tap)
         
-        //let zoom = UIFreeZoomMoveGesture(target: self, action: #selector(zoomMoveAction))
-        //self.view.addGestureRecognizer(zoom)
-        //zoom.exclusives.append(paletteView)
+        let zoom = UIFreeZoomMoveGesture(target: self, action: #selector(zoomMoveAction))
+        self.view.addGestureRecognizer(zoom)
+        //        zoom.exclusives.append(paletteView)
     }
     
     var lastScale: CGFloat?
-    var lastPoint: CGPoint?
+    
     
     func scaleImage(sender: UIPinchGestureRecognizer) {
         if UIGestureRecognizerState.began == sender.state {
             lastScale = 1.0
             lastPoint = sender.location(in: drawingPaint)
+            print("drawingPaint: \(lastPoint)")
         }
         
         //Scale
         let scale = 1.0 - (lastScale! - sender.scale)
+        print("scaleImage(), scale \(scale)")
         
         self.view.transform = self.view.transform.scaledBy(x: scale, y: scale)
         
@@ -54,8 +53,10 @@ class ViewController: UIViewController , UIGestureRecognizerDelegate{
         
         //Translate
         let point = sender.location(in: self.view)
+        print("pinch begin at \(point)")
         self.view.transform = self.view.transform.translatedBy(x: point.x - lastPoint!.x, y: point.y - lastPoint!.y)
         lastPoint = sender.location(in: self.view)
+        print("pinch end at \(lastPoint)")
         
         sender.scale = 1.0
     }
@@ -79,9 +80,14 @@ class ViewController: UIViewController , UIGestureRecognizerDelegate{
         }
     }
     func zoomMoveAction(sender:UIFreeZoomMoveGesture){
+        if sender.state == .began {
+            lastPoint = sender.location(in: drawingPaint)
+        }
+        
         print("Scaled: \(sender.scale)")
         print("Moved: \(sender.moved.x), \(sender.moved.y)")
         let currentScale = drawingPaint.frame.width/self.view.frame.width
+        print("Current Scale: \(currentScale)")
         if (sender.scale > 1.0) {
             if (currentScale > maxScale) {
                 drawingPaint.center.x += sender.moved.x
@@ -99,17 +105,21 @@ class ViewController: UIViewController , UIGestureRecognizerDelegate{
                 return
             }
         }
-        let centerX = sender.center.x - drawingPaint.center.x
-        let centerY = sender.center.y - drawingPaint.center.y
         
         drawingPaint.center.x += sender.moved.x // + centerX*sender.scale
         drawingPaint.center.y += sender.moved.y // + centerY*sender.scale
         
         drawingPaint.transform = drawingPaint.transform.scaledBy(x: sender.scale, y: sender.scale)
+        
+        // Do this after scale, it will translate to the center of pinch tap
+        let point = sender.location(in: drawingPaint)
+        drawingPaint.transform = drawingPaint.transform.translatedBy(x: point.x - lastPoint!.x, y: point.y - lastPoint!.y)
+        lastPoint = sender.location(in: drawingPaint)
         sender.scale = 1
+        
     }
-
-
+    
+    
 }
 class UIFreeZoomMoveGesture: UIGestureRecognizer {
     private var previousFirstFinger: CGPoint? = nil
